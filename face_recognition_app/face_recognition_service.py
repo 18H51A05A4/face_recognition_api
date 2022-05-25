@@ -1,30 +1,30 @@
 import numpy as np 
-import keras.models as kerasmodels
+# import keras.models as kerasmodels
 from PIL import Image
 import re
 from io import BytesIO
 import base64
 import pickle
-from utilities import get_base_path
+from utilities import get_base_path,face_distance
 
 
 
-class MLModel():
+# class MLModel():
 
-    __instance = None
+#     __instance = None
  
-    @staticmethod
-    def get_instance():
-        if(MLModel.__instance is None):
-            MLModel()
-        return MLModel.__instance
+#     @staticmethod
+#     def get_instance():
+#         if(MLModel.__instance is None):
+#             MLModel()
+#         return MLModel.__instance
  
-    def __init__(self):
-        self.model = kerasmodels.load_model(get_base_path()+'\\face_recognition_app\\asssets\\facenet_keras.h5')
-        MLModel.__instance =  self 
+#     def __init__(self):
+#         self.model = kerasmodels.load_model(get_base_path()+'\\face_recognition_app\\asssets\\facenet_keras.h5')
+#         MLModel.__instance =  self 
 
 
-facenet = MLModel.get_instance()
+# facenet = MLModel.get_instance()
 
 
 
@@ -37,8 +37,8 @@ def get_face_encodings(face):
     # transfer face into one sample (3 dimension to 4 dimension)
     sample = np.expand_dims(face, axis=0)
     # make prediction to get embedding
-    yhat = facenet.model.predict(sample)
-    return yhat[0]
+    # yhat = facenet.model.predict(sample)
+    # return yhat[0]
 
 
 def base64_to_nparray(image_url):
@@ -58,23 +58,31 @@ def findCosineDistance(a, b):
     return (1 - (x / (np.sqrt(y) * np.sqrt(z))))
 
 
+
+
+
 def save_encodings(username,encodings):
-    face_encodings = None
-    with open('face_encodings.dat',"rb") as file:
-        face_encodings = pickle.load(file)    
-    face_encodings[username] =  encodings
-    with open("face_encodings.dat","wb") as file:
-        pickle.dump(face_encodings,file)
+    # face_encodings = None
+    # with open(get_base_path()+'\\face_recognition_app\\asssets\\face_encodings.dat',"rb") as file:
+    #     face_encodings = pickle.load(file)    
+    # face_encodings[username] =  encodings
+    # with open(get_base_path()+'\\face_recognition_app\\asssets\\face_encodings.dat',"wb") as file:
+    #     pickle.dump(face_encodings,file)
+    np.save(get_base_path()+f'\\face_recognition_app\\asssets\\{username}.npy',encodings)
 
 
 def verify_encodings(username,encodings):
-    our_encodings = None
-    with open('face_encodings.dat',"rb") as file:
-        face_encodings = pickle.load(file)
-        our_encodings = face_encodings[username]
-    dist = findCosineDistance(our_encodings,encodings)
-    if(dist > 0.6):
-        return True
-    else:
-        return False
+    our_encodings = np.load(get_base_path()+f'\\face_recognition_app\\asssets\\{username}.npy')
+    # with open(get_base_path()+'\\face_recognition_app\\asssets\\face_encodings.dat',"rb") as file:
+    #     face_encodings = pickle.load(file)
+    #     our_encodings = face_encodings[username]
+    print(type(our_encodings),type(encodings))
+    # dist = findCosineDistance(our_encodings,encodings)
+    res = face_distance(our_encodings,encodings)
+    print(res)
+    return res
+    # if(dist < 0.5):
+    #     return True
+    # else:
+    #     return False
 

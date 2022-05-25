@@ -3,7 +3,17 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from  rest_framework import status
 from face_recognition_app.face_recognition_service import base64_to_nparray,get_face_encodings,save_encodings,verify_encodings
-# Create your views here.
+from utilities import preprocessing
+from PIL import Image
+# Create your vxews here.
+
+import face_recognition
+import re
+from io import BytesIO
+import base64
+import numpy as np
+from utilities import get_base_path
+
 
 @api_view(['get'])
 def check(request):
@@ -16,29 +26,48 @@ def save_user_encodings(request):
         var= request.data["username"] and request.data["image"]
     except Exception as e:
         return Response({"details":"request body should contain username and image(base64 url)"})
-    try:
-        image_array = base64_to_nparray(request.data["image"])
-        face_encodings = get_face_encodings(image_array)
-        save_encodings(request.data["username"],face_encodings)
-    except Exception as e:
-        return Response({"details":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # try:
+    image_data = re.sub('^data:image/.+;base64,', '', request.data['image'])
+    image =  face_recognition.load_image_file(BytesIO(base64.b64decode(image_data)))
+    locations = face_recognition.face_locations(image)
+    encodings = face_recognition.face_encodings(image,locations)
+    np.save(get_base_path()+f'\\face_recognition_app\\asssets\\{request.data["username"]}.npy',encodings)
+    
+        
+        # image_array = base64_to_nparray(request.data["image"])
+        # face_encodings = get_face_encodings(image_array)
+        # face_encodings = preprocessing(image_array)
+        # save_encodings(request.data["username"],face_encodings)
+    # except Exception as e:
+    #     return Response({"details":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return Response({"details":"user registration completed"})
 
 
 
 @api_view(['post'])
 def verify_user_encodings(request):
-    try:
-        var= request.data["username"] and request.data["image"]
-    except Exception as e:
-        return Response({"details":"request body should contain username and image(base64 url)"})
-    try:
-        image_array = base64_to_nparray(request.data["image"])
-        face_encodings = get_face_encodings(image_array)
-        if(verify_encodings(request.data["username"],face_encodings)):
-            return Response({"details":"user verified"})
-        else:
-            return Response({"details":"user not verified"})
-    except Exception as e:
-        return Response({"details":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # try:
+    #     var= request.data["username"] and request.data["image"]
+    # except Exception as e:
+    #     return Response({"details":"request body should contain username and image(base64 url)"})
+    # try:
+        # image_array = base64_to_nparray(request.data["image"])
+        # # face_encodings = get_face_encodings(image_array)
+        # face_encodings = preprocessing(image_array)
+
+        # if(verify_encodings(request.data["username"],face_encodings)):
+        #     return Response({"details":"user verified"})
+        # else:
+        #     return Response({"details":"user not verified"})
+    image_data = re.sub('^data:image/.+;base64,', '', request.data['image'])
+    image =  face_recognition.load_image_file(BytesIO(base64.b64decode(image_data)))
+    locations = face_recognition.face_locations(image)
+    encodings = face_recognition.face_encodings(image,locations)
+    encodings1 = np.load(get_base_path()+f'\\face_recognition_app\\asssets\\{request.data["username"]}.npy')
+    print(encodings1,encodings)
+    res = face_recognition.face_distance(encodings,encodings1)
+    print(res)
+    # except Exception as e:
+    #     return Response({"details":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response("something")
     
