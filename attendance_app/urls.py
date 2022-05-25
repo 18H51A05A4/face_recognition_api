@@ -1,5 +1,5 @@
 from django.urls import path 
-from .views import create_class,get_student_list,take_attendance,get_classes
+from .views import create_class,get_student_list,take_attendance,get_classes,get_attendance
 urlpatterns = [
 
     #teacher routes
@@ -8,8 +8,8 @@ urlpatterns = [
 
     #student routes
     path('take-attendance/',take_attendance),
-    path('get-classes/',get_classes)
-    # path('get-attendance/',get_attendance),
+    path('get-classes/',get_classes),
+    path('get-attendance/',get_attendance)
     # path('add-students-in-class/',add_students_in_class)
 
 ]

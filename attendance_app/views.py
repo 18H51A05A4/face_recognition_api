@@ -75,22 +75,27 @@ def get_student_list(request):
 
 #student routes
 
-
 @api_view(['get'])
 @permission_classes([IsAuthenticated,])
 def get_classes(request):
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
     all_records = ClassTable.objects.all()
-    record = []
+    records = []
     # and datetime.strptime(now.strftime("%H:%M:%S"),"%H:%M:%S") <i.end_time
     for i in all_records:
+        obj = {
+            "class_id" : i.class_id,
+            "class_name" : i.class_name,
+            "start_time" : i.start_time,
+            "end_time" : i.end_time,
+            "class_date" : i.class_date,
+            "meeting_link" : i.meet_link
+        }
         if(i.class_date > datetime.now().date()):
-            record.append(i)
+            records.append(obj)   
         elif(i.class_date == datetime.now().date() and datetime.now().time() < i.end_time):
-            record.append(i)
-    print(len(record))
-    return Response("ok")
+            records.append(obj)
+    return Response(records)
+
 
 
 @api_view(['POST'])
@@ -130,29 +135,48 @@ def take_attendance(request):
     return Response("attendance recorded")
 
 
-# @api_view(['GET'])
-# @permission_classes((IsAuthenticated,))
-# def get_attendance(request):
-#     payload = get_payload_from_token(request.META.get('HTTP_AUTHORIZATION'))
-#     try:
-#         var = (request.data["date"]   
-#               )
-#     except KeyError:
-#         return Response({"details":"body should contain date"},status=status.HTTP_409_CONFLICT)
+@api_view(['POST'])
+@permission_classes((IsAuthenticated,))
+def get_attendance(request):
+    payload = get_payload_from_token(request.META.get('HTTP_AUTHORIZATION'))
+    try:
+        var = (request.data["date"]   
+              )
+    except KeyError:
+        return Response({"details":"body should contain date"},status=status.HTTP_409_CONFLICT)
     
-#     if(payload["is_teacher"]):
-#         try:
-#             class_records= ClassTable.objects.get(teacher_id = payload["user_id"], class_date = request.data["date"])
-#         except ClassTable.DoesNotExist:
-#             return Response(f"no classes found on {request.data['date']}")
-        
-#         for class_record in class_records:
-#             attendance_records = Attendance.objects.get(class_id = class_record.class_id)
-#             for attendance_record in attendance_records:
+    if(payload["is_teacher"]):
+        try:
+            class_records= ClassTable.objects.filter(teacher_id = payload["user_id"], class_date = datetime.strptime(request.data["date"],"%Y-%m-%d"))
+        except ClassTable.DoesNotExist:
+            return Response(f"no classes found on {request.data['date']}")
+        res = []
+        for class_record in class_records:
+            res1 =[]
+            students = Attendance.objects.filter(class_id = class_record.class_id)
+            for student in students:
+                obj={
+                    "username" : User.objects.get(id = student.student_id_id).username,
+                    "is_attended" : student.attended
+                }
+                res1.append(obj)
+            res.append(res1)
+        return Response(res)
+    else:
+        class_records = ClassTable.objects.filter(class_date = datetime.strptime(request.data["date"],"%Y-%m-%d"))
+        student_records = Attendance.objects.filter(student_id_id = payload["user_id"])
+        res = []
+        for student_record in student_records:
+            for class_record in class_records:
+                if(student_record.class_id_id == class_record.class_id):
+                    obj={
+                    "class_name" : class_record.class_name,
+                    "username" : User.objects.get(id = student_record.student_id_id).username,
+                    "is_attended" : student_record.attended,
+                    }
+                    res.append(obj)
+        return Response(res)
             
-#     else:
-#         pass
-#     return Response('get attendance route')
 
 
 
