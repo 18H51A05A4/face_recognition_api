@@ -13,6 +13,7 @@ from datetime import datetime
 # Create your views here.
 
 
+
 #teacher routes
 
 @api_view(['POST'])
@@ -73,6 +74,7 @@ def get_student_list(request):
 
 
 
+
 #student routes
 
 @api_view(['get'])
@@ -95,6 +97,7 @@ def get_classes(request):
         elif(i.class_date == datetime.now().date() and datetime.now().time() < i.end_time):
             records.append(obj)
     return Response(records)
+
 
 
 
@@ -133,6 +136,7 @@ def take_attendance(request):
     except Exception as e:
         return Response({"details":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return Response("attendance recorded")
+
 
 
 @api_view(['POST'])
