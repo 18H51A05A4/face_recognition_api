@@ -54,6 +54,31 @@ def create_class(request):
     return Response("class created")
 
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated,])
+def get_classes_teacher(request):
+    payload = get_payload_from_token(request.META.get('HTTP_AUTHORIZATION'))
+    try:
+        classes = ClassTable.objects.filter(teacher_id = payload["user_id"])
+        records = []
+        # and datetime.strptime(now.strftime("%H:%M:%S"),"%H:%M:%S") <i.end_time
+        for i in classes:
+            obj = {
+                "class_id" : i.class_id,
+                "class_name" : i.class_name,
+                "start_time" : i.start_time,
+                "end_time" : i.end_time,
+                "class_date" : i.class_date,
+                "meeting_link" : i.meet_link
+            }
+            records.append(obj)   
+        return Response(records)
+    except Exception as e:
+        return Response({"detail": str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 @api_view(['get'])
 @permission_classes([IsAuthenticated,])
 def get_student_list(request):
@@ -79,25 +104,29 @@ def get_student_list(request):
 
 @api_view(['get'])
 @permission_classes([IsAuthenticated,])
-def get_classes(request):
-    all_records = ClassTable.objects.all()
-    records = []
-    # and datetime.strptime(now.strftime("%H:%M:%S"),"%H:%M:%S") <i.end_time
-    for i in all_records:
-        obj = {
-            "class_id" : i.class_id,
-            "class_name" : i.class_name,
-            "start_time" : i.start_time,
-            "end_time" : i.end_time,
-            "class_date" : i.class_date,
-            "meeting_link" : i.meet_link
-        }
-        if(i.class_date > datetime.now().date()):
-            records.append(obj)   
-        elif(i.class_date == datetime.now().date() and datetime.now().time() < i.end_time):
-            records.append(obj)
-    return Response(records)
-
+def get_classes_student(request):
+    payload = get_payload_from_token(request.META.get('HTTP_AUTHORIZATION'))
+    try:
+        attendance_allrecords = Attendance.objects.filter(student_id = payload["user_id"])    
+        records = []
+        # and datetime.strptime(now.strftime("%H:%M:%S"),"%H:%M:%S") <i.end_time
+        for j in attendance_allrecords:
+            i = ClassTable.objects.get(class_id = j.class_id)
+            obj = {
+                "class_id" : i.class_id,
+                "class_name" : i.class_name,
+                "start_time" : i.start_time,
+                "end_time" : i.end_time,
+                "class_date" : i.class_date,
+                "meeting_link" : i.meet_link
+            }
+            if(i.class_date > datetime.now().date()):
+                records.append(obj)   
+            elif(i.class_date == datetime.now().date() and datetime.now().time() < i.end_time):
+                records.append(obj)
+        return Response(records)
+    except Exception as e:
+        return Response({"detail":str(e)},status= status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

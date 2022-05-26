@@ -20,8 +20,10 @@ class Attendance(models.Model):
     joining_verification = models.BooleanField(default=False)
     leaving_verification = models.BooleanField(default=False)
     attended = models.BooleanField(default=False)
+    ludt = models.DateTimeField(auto_now_add=True)
 
 class StudentSection(models.Model):
     student_id = models.ForeignKey(User,to_field='id',on_delete=models.DO_NOTHING)
     section = models.CharField(max_length=255)
+    ludt = models.DateTimeField(auto_now_add=True)
 
