@@ -99,12 +99,19 @@ def verify_user_encodings_using_model(request):
     try:
         res = verify_face_encodings(request.data["username"],request.data["image"])
         print(round(res,5))  
+        print(request.data)
         if(res<=0.5):
-            obj = Attendance.objects.get(class_id = request.data["class_id"],student_id = request.data["user_id"])
-            if(request.data["is_joining"]):
+            obj = Attendance.objects.get(class_id = int(request.data["class_id"]),student_id = int(request.data["user_id"]))
+            if(request.data["is_joining"]== 'true'):
                 obj.joining_verification = True
+                print("joining attendance")
             else:
                 obj.leaving_verification = True
+                print("leaving attendance")
+            
+            if(obj.joining_verification and obj.leaving_verification):
+                obj.attended = True
+
             obj.save()
             return Response({
                 "res": "true",

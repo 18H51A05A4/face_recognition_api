@@ -246,8 +246,8 @@ def get_attendance(request):
                     obj={
                     "class_name" : class_record.class_name,
                     "username" : User.objects.get(id = student_record.student_id_id).username,
-                    "joining_attendance" : student.joining_verification,
-                    "leaving_attendance" : student.leaving_verification,
+                    "joining_attendance" : student_record.joining_verification,
+                    "leaving_attendance" : student_record.leaving_verification,
                     "is_attended" : student_record.attended,
                     }
                     res.append(obj)

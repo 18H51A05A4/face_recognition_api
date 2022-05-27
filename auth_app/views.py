@@ -15,6 +15,7 @@ def auth_check(request):
 
 
 @api_view(['POST'])
+
 def create_student(request):
     try:
         user = User.objects.create_user(
