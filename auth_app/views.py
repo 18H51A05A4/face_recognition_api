@@ -34,6 +34,7 @@ def create_student(request):
     })
 
 
+
 @api_view(['POST'])
 def create_teacher(request):
     try:
@@ -53,6 +54,7 @@ def create_teacher(request):
     return Response({
         "details" : "user registration successful"
     })
+
 
 
 @api_view(['post'])

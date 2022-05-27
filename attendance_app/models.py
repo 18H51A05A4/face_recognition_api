@@ -27,3 +27,8 @@ class StudentSection(models.Model):
     section = models.CharField(max_length=255)
     ludt = models.DateTimeField(auto_now_add=True)
 
+
+class FaceVerification(models.Model):
+    is_verified = models.BooleanField(default=False)
+    ludt =  models.DateTimeField(auto_now_add=True)
+

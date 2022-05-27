@@ -5,13 +5,43 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from utilities import get_payload_from_token
-from attendance_app.models import ClassTable,Attendance
+from attendance_app.models import ClassTable,Attendance, FaceVerification
 from auth_app.models import User
 import json 
 from django.db.models import Q 
 from datetime import datetime
 # Create your views here.
 
+#user 
+@api_view(['get'])
+@permission_classes((IsAuthenticated,))
+def get_user_details(request):
+    payload = get_payload_from_token(request.META.get('HTTP_AUTHORIZATION'))
+    record = User.objects.get(id =  payload['user_id'])
+    obj = {
+        "user_id" : record.id,
+        "username" : record.username,
+        "email" : record.email,
+        "is_teacher" : record.is_teacher
+    }
+    return Response(obj)
+
+
+@api_view(['POST'])
+def set_is_verified(request):
+    record = FaceVerification.objects.get(id=2)
+    record.is_verified = request.data["is_verified"]
+    record.save() 
+    return Response("verification updated")
+
+
+@api_view(['get'])
+def is_verified(request):
+    record = FaceVerification.objects.get(id=2)
+    obj = {
+        "is_verified" : record.is_verified
+    }
+    return Response(obj)
 
 
 #teacher routes
@@ -55,7 +85,7 @@ def create_class(request):
 
 
 
-@api_view(['POST'])
+@api_view(['post'])
 @permission_classes([IsAuthenticated,])
 def get_classes_teacher(request):
     payload = get_payload_from_token(request.META.get('HTTP_AUTHORIZATION'))
@@ -72,7 +102,8 @@ def get_classes_teacher(request):
                 "class_date" : i.class_date,
                 "meeting_link" : i.meet_link
             }
-            records.append(obj)   
+            if(i.class_date >= datetime.strptime(request.data["date"],"%Y-%m-%d").date()):
+                records.append(obj)   
         return Response(records)
     except Exception as e:
         return Response({"detail": str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -80,7 +111,7 @@ def get_classes_teacher(request):
 
 
 @api_view(['get'])
-@permission_classes([IsAuthenticated,])
+# @permission_classes([IsAuthenticated,])
 def get_student_list(request):
     try:
         students = User.objects.filter(is_teacher = False)
@@ -111,7 +142,7 @@ def get_classes_student(request):
         records = []
         # and datetime.strptime(now.strftime("%H:%M:%S"),"%H:%M:%S") <i.end_time
         for j in attendance_allrecords:
-            i = ClassTable.objects.get(class_id = j.class_id)
+            i = ClassTable.objects.get(class_id = j.class_id_id)
             obj = {
                 "class_id" : i.class_id,
                 "class_name" : i.class_name,
@@ -120,6 +151,7 @@ def get_classes_student(request):
                 "class_date" : i.class_date,
                 "meeting_link" : i.meet_link
             }
+            print(i.class_date ,datetime.now().date())
             if(i.class_date > datetime.now().date()):
                 records.append(obj)   
             elif(i.class_date == datetime.now().date() and datetime.now().time() < i.end_time):
@@ -185,7 +217,16 @@ def get_attendance(request):
             return Response(f"no classes found on {request.data['date']}")
         res = []
         for class_record in class_records:
-            res1 =[]
+            res1 =[
+                {
+                "class_id" : class_record.class_id,
+                "class_name" : class_record.class_name,
+                "start_time": class_record.start_time,
+                "end_time" : class_record.end_time,
+                "meet_link":class_record.meet_link
+
+            }
+            ]
             students = Attendance.objects.filter(class_id = class_record.class_id)
             for student in students:
                 obj={
@@ -205,6 +246,8 @@ def get_attendance(request):
                     obj={
                     "class_name" : class_record.class_name,
                     "username" : User.objects.get(id = student_record.student_id_id).username,
+                    "joining_attendance" : student.joining_verification,
+                    "leaving_attendance" : student.leaving_verification,
                     "is_attended" : student_record.attended,
                     }
                     res.append(obj)

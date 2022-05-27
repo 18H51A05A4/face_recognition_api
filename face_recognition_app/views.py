@@ -2,9 +2,10 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from  rest_framework import status
+from attendance_app.models import FaceVerification
 from face_recognition_app.face_recognition_service import base64_to_nparray,get_face_encodings,save_encodings,verify_encodings
 from PIL import Image
-
+from attendance_app.models import Attendance
 # Create your vxews here.
 
 import face_recognition
@@ -62,9 +63,13 @@ def verify_user_encodings(request):
         res = face_recognition.face_distance(encodings,encodings1)
         print(res)
         if(res>=0.5):
-            return Response(f"user verified with {res}")
+            return Response({
+                "res": "true",
+                "detail" :f"user verified with {res}"})
         else:
-            return Response(f"user not verified with {res}")
+            return Response({
+                "res" : "false",
+                "detail" : f"user not verified with {res}"})
     except Exception as e:
         return Response({"details":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -95,9 +100,19 @@ def verify_user_encodings_using_model(request):
         res = verify_face_encodings(request.data["username"],request.data["image"])
         print(round(res,5))  
         if(res<=0.5):
-            return Response(f"user verified with {res}")
+            obj = Attendance.objects.get(class_id = request.data["class_id"],student_id = request.data["user_id"])
+            if(request.data["is_joining"]):
+                obj.joining_verification = True
+            else:
+                obj.leaving_verification = True
+            obj.save()
+            return Response({
+                "res": "true",
+                "detail" :f"user verified with {res}"})
         else:
-            return Response(f"user not verified with {res}")
+            return Response({
+                "res" : "false",
+                "detail" : f"user not verified with {res}"})
     except Exception as e:
         return Response({"details":str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
   
